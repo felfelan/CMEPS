@@ -3231,6 +3231,82 @@ contains
        end if
     end if
 
+
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'Flrl_rofh2osfc_sur')
+       call addfld_to(comprof, 'Flrl_rofh2osfc_sur')
+    else
+       if ( fldchk(is_local%wrap%FBImp(complnd, complnd), 'Flrl_rofh2osfc_sur', rc=rc) .and. &
+            fldchk(is_local%wrap%FBExp(comprof)         , 'Flrl_rofh2osfc_sur', rc=rc)) then
+          call addmap_from(complnd, 'Flrl_rofh2osfc_sur', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'Flrl_rofh2osfc_sur', &
+               mrg_from=complnd, mrg_fld='Flrl_rofh2osfc_sur', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'Flrl_rofsat_excess_sur')
+       call addfld_to(comprof, 'Flrl_rofsat_excess_sur')
+    else
+       if ( fldchk(is_local%wrap%FBImp(complnd, complnd), 'Flrl_rofsat_excess_sur', rc=rc) .and. &
+            fldchk(is_local%wrap%FBExp(comprof)         , 'Flrl_rofsat_excess_sur', rc=rc)) then
+          call addmap_from(complnd, 'Flrl_rofsat_excess_sur', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'Flrl_rofsat_excess_sur', &
+               mrg_from=complnd, mrg_fld='Flrl_rofsat_excess_sur', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'Flrl_rofinfl_excess_sur')
+       call addfld_to(comprof, 'Flrl_rofinfl_excess_sur')
+    else
+       if ( fldchk(is_local%wrap%FBImp(complnd, complnd), 'Flrl_rofinfl_excess_sur', rc=rc) .and. &
+            fldchk(is_local%wrap%FBExp(comprof)         , 'Flrl_rofinfl_excess_sur', rc=rc)) then
+          call addmap_from(complnd, 'Flrl_rofinfl_excess_sur', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'Flrl_rofinfl_excess_sur', &
+               mrg_from=complnd, mrg_fld='Flrl_rofinfl_excess_sur', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'Flrl_rofh2osfc_thresh')
+       call addfld_to(comprof, 'Flrl_rofh2osfc_thresh')
+    else
+       if ( fldchk(is_local%wrap%FBImp(complnd, complnd), 'Flrl_rofh2osfc_thresh', rc=rc) .and. &
+            fldchk(is_local%wrap%FBExp(comprof)         , 'Flrl_rofh2osfc_thresh', rc=rc)) then
+          call addmap_from(complnd, 'Flrl_rofh2osfc_thresh', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'Flrl_rofh2osfc_thresh', &
+               mrg_from=complnd, mrg_fld='Flrl_rofh2osfc_thresh', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+
+
+
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'Sl_soilw')
+       call addfld_to(comprof, 'Sl_soilw')
+    else
+       if ( fldchk(is_local%wrap%FBexp(comprof)         , 'Sl_soilw', rc=rc) .and. &
+            fldchk(is_local%wrap%FBImp(complnd,complnd ), 'Sl_soilw', rc=rc)) then
+          call addmap_from(complnd, 'Sl_soilw', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'Sl_soilw', &
+		       mrg_from=complnd, mrg_fld='Sl_soilw', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'Sl_soilliq')
+       call addfld_to(comprof, 'Sl_soilliq')
+    else
+       if ( fldchk(is_local%wrap%FBexp(comprof)         , 'Sl_soilliq', rc=rc) .and. &
+            fldchk(is_local%wrap%FBImp(complnd,complnd ), 'Sl_soilliq', rc=rc)) then
+          call addmap_from(complnd, 'Sl_soilliq', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'Sl_soilliq', &
+		       mrg_from=complnd, mrg_fld='Sl_soilliq', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+
+
+
     ! ---------------------------------------------------------------------
     ! to rof: water flux from land (ice surface)
     ! ---------------------------------------------------------------------

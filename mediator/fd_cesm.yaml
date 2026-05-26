@@ -178,6 +178,10 @@
        canonical_units: m3/m3
        description: lnd import to med
      #
+     - standard_name: Sl_soilliq
+       canonical_units: kg m-2
+       description: lnd import to med
+     #
      - standard_name: Sl_t
        canonical_units: K
        description: lnd import to med
@@ -204,6 +208,22 @@
      #
      - standard_name: Flrl_rofsur
        canonical_units: kg m-2 s-1
+       description: lnd export to river
+     #
+     - standard_name: Flrl_rofh2osfc_sur
+       canonical_units: kg m-2 s-1
+       description: lnd export to river
+     #
+     - standard_name: Flrl_rofsat_excess_sur
+       canonical_units: kg m-2 s-1
+       description: lnd export to river
+     #
+     - standard_name: Flrl_rofinfl_excess_sur
+       canonical_units: kg m-2 s-1
+       description: lnd export to river
+     #
+     - standard_name: Flrl_rofh2osfc_thresh
+       canonical_units: kg m-2
        description: lnd export to river
      #
      - standard_name: Sl_topo_elev
