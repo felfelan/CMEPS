@@ -3256,6 +3256,44 @@ contains
 		       mrg_from=complnd, mrg_fld='Sl_soilliq', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
        end if
     end if
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'inst_soil_temperature')
+       call addfld_to(comprof, 'inst_soil_temperature')
+    else
+       if ( fldchk(is_local%wrap%FBExp(comprof)         , 'inst_soil_temperature', rc=rc) .and. &
+            fldchk(is_local%wrap%FBImp(complnd, complnd), 'inst_soil_temperature', rc=rc)) then
+          call addmap_from(complnd, 'inst_soil_temperature', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'inst_soil_temperature', &
+               mrg_from=complnd, mrg_fld='inst_soil_temperature', &
+               mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'inst_total_soil_moisture_content')
+       call addfld_to(comprof, 'inst_total_soil_moisture_content')
+    else
+       if ( fldchk(is_local%wrap%FBExp(comprof)         , 'inst_total_soil_moisture_content', rc=rc) .and. &
+            fldchk(is_local%wrap%FBImp(complnd, complnd), 'inst_total_soil_moisture_content', rc=rc)) then
+          call addmap_from(complnd, 'inst_total_soil_moisture_content', &
+               comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'inst_total_soil_moisture_content', &
+               mrg_from=complnd, mrg_fld='inst_total_soil_moisture_content', &
+               mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'inst_soil_moisture_content')
+       call addfld_to(comprof, 'inst_soil_moisture_content')
+    else
+       if ( fldchk(is_local%wrap%FBExp(comprof)         , 'inst_soil_moisture_content', rc=rc) .and. &
+            fldchk(is_local%wrap%FBImp(complnd, complnd), 'inst_soil_moisture_content', rc=rc)) then
+          call addmap_from(complnd, 'inst_soil_moisture_content', &
+               comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'inst_soil_moisture_content', &
+               mrg_from=complnd, mrg_fld='inst_soil_moisture_content', &
+               mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
 
     ! ---------------------------------------------------------------------
     ! to rof: water flux from land (ice surface)

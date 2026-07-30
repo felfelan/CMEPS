@@ -94,7 +94,7 @@ contains
     use ESMF , only : ESMF_Field, ESMF_FieldGet, ESMF_FieldCreate
     use ESMF , only : ESMF_FieldBundle, ESMF_FieldBundleAdd, ESMF_FieldBundleCreate
     use ESMF , only : ESMF_State, ESMF_StateGet, ESMF_Mesh, ESMF_MeshLoc
-    use ESMF , only : ESMF_AttributeGet, ESMF_INDEX_DELOCAL
+    use ESMF , only : ESMF_INDEX_DELOCAL
 
     ! input/output variables
     type(ESMF_State)      , intent(in)           :: StateIn          ! input state
@@ -104,7 +104,6 @@ contains
     integer               , intent(out)          :: rc
 
     ! local variables
-    logical            :: isPresent
     integer            :: n,n1
     type(ESMF_Field)   :: lfield
     type(ESMF_Field)   :: newfield
@@ -164,8 +163,7 @@ contains
           if (lrank == 2) then
 
              ! determine ungridded lower and upper bounds for lfield
-             call ESMF_AttributeGet(lfield, name="UngriddedLBound", convention="NUOPC", &
-                  purpose="Instance", itemCount=ungriddedCount,  isPresent=isPresent, rc=rc)
+             call ESMF_FieldGet(lfield, ungriddedDimCount=ungriddedCount, rc=rc)
              if (chkerr(rc,__LINE__,u_FILE_u)) return
              if (ungriddedCount /= 1) then
                 call shr_log_error(trim(subname)//": ERROR ungriddedCount for "// &
@@ -174,11 +172,8 @@ contains
              end if
 
              ! set ungridded dimensions for field
-             call ESMF_AttributeGet(lfield, name="UngriddedLBound", convention="NUOPC", &
-                  purpose="Instance", valueList=ungriddedLBound, rc=rc)
-             if (chkerr(rc,__LINE__,u_FILE_u)) return
-             call ESMF_AttributeGet(lfield, name="UngriddedUBound", convention="NUOPC", &
-                  purpose="Instance", valueList=ungriddedUBound, rc=rc)
+             call ESMF_FieldGet(lfield, ungriddedLBound=ungriddedLBound, &
+                  ungriddedUBound=ungriddedUBound, rc=rc)
              if (chkerr(rc,__LINE__,u_FILE_u)) return
 
              ! get 2d pointer for field

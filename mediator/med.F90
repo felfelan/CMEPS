@@ -1511,10 +1511,30 @@ contains
                   end if
                end if
 
-               ! Create field on mesh
-               meshField = ESMF_FieldCreate(mesh, typekind=ESMF_TYPEKIND_R8, &
-                    meshloc=ESMF_MESHLOC_ELEMENT, name=fieldName, rc=rc)
+               ! Preserve any ungridded dimensions when converting the Grid
+               ! field to the mediator Mesh.
+               ungriddedCount = 0
+               call ESMF_AttributeGet(fieldList(n), name="UngriddedLBound", convention="NUOPC", &
+                    purpose="Instance", itemCount=ungriddedCount, isPresent=isPresent, rc=rc)
                if (ChkErr(rc,__LINE__,u_FILE_u)) return
+               allocate(ungriddedLBound(ungriddedCount), ungriddedUBound(ungriddedCount))
+               if (ungriddedCount > 0) then
+                  call ESMF_AttributeGet(fieldList(n), name="UngriddedLBound", convention="NUOPC", &
+                       purpose="Instance", valueList=ungriddedLBound, rc=rc)
+                  if (ChkErr(rc,__LINE__,u_FILE_u)) return
+                  call ESMF_AttributeGet(fieldList(n), name="UngriddedUBound", convention="NUOPC", &
+                       purpose="Instance", valueList=ungriddedUBound, rc=rc)
+                  if (ChkErr(rc,__LINE__,u_FILE_u)) return
+                  meshField = ESMF_FieldCreate(mesh, typekind=ESMF_TYPEKIND_R8, &
+                       meshloc=ESMF_MESHLOC_ELEMENT, name=fieldName, &
+                       ungriddedLBound=ungriddedLBound, ungriddedUBound=ungriddedUBound, &
+                       gridToFieldMap=(/ungriddedCount + 1/), rc=rc)
+               else
+                  meshField = ESMF_FieldCreate(mesh, typekind=ESMF_TYPEKIND_R8, &
+                       meshloc=ESMF_MESHLOC_ELEMENT, name=fieldName, rc=rc)
+               end if
+               if (ChkErr(rc,__LINE__,u_FILE_u)) return
+               deallocate(ungriddedLBound, ungriddedUBound)
 
                ! Swap grid for mesh, at this point, only connected fields are in the state
                call NUOPC_Realize(State, field=meshField, rc=rc)

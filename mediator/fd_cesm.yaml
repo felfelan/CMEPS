@@ -182,6 +182,18 @@
        canonical_units: kg m-2
        description: lnd import to med
      #
+     - standard_name: inst_soil_temperature
+       canonical_units: K
+       description: lnd export to river
+     #
+     - standard_name: inst_total_soil_moisture_content
+       canonical_units: m3/m3
+       description: lnd export to river
+     #
+     - standard_name: inst_soil_moisture_content
+       canonical_units: m3/m3
+       description: lnd export to river
+     #
      - standard_name: Sl_t
        canonical_units: K
        description: lnd import to med
