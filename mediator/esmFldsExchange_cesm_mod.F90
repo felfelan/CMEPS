@@ -3221,6 +3221,18 @@ contains
     end if
 
     if (phase == 'advertise') then
+       call addfld_from(complnd, 'Flrl_rofexcess_sur')
+       call addfld_to(comprof, 'Flrl_rofexcess_sur')
+    else
+       if ( fldchk(is_local%wrap%FBImp(complnd, complnd), 'Flrl_rofexcess_sur', rc=rc) .and. &
+            fldchk(is_local%wrap%FBExp(comprof)         , 'Flrl_rofexcess_sur', rc=rc)) then
+          call addmap_from(complnd, 'Flrl_rofexcess_sur', comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'Flrl_rofexcess_sur', &
+               mrg_from=complnd, mrg_fld='Flrl_rofexcess_sur', mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+
+    if (phase == 'advertise') then
        call addfld_from(complnd, 'Flrl_rofh2osfc_thresh')
        call addfld_to(comprof, 'Flrl_rofh2osfc_thresh')
     else

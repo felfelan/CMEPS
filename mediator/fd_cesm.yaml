@@ -234,6 +234,10 @@
        canonical_units: kg m-2 s-1
        description: lnd export to river
      #
+     - standard_name: Flrl_rofexcess_sur
+       canonical_units: kg m-2 s-1
+       description: lnd export to river
+     #
      - standard_name: Flrl_rofh2osfc_thresh
        canonical_units: kg m-2
        description: lnd export to river
