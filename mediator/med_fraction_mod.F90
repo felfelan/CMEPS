@@ -150,7 +150,8 @@ module med_fraction_mod
   character(len=6),parameter   :: fraclist_a(5) = (/'ifrac ','ofrac ','lfrac ','lfrin ','aofrac'/)
   character(len=6),parameter   :: fraclist_o(4) = (/'ifrac ','ofrac ','ifrad ','ofrad '/)
   character(len=6),parameter   :: fraclist_i(2) = (/'ifrac ','ofrac '/)
-  character(len=6),parameter   :: fraclist_l(2) = (/'lfrac ','lfrin '/)
+  ! character(len=6),parameter   :: fraclist_l(2) = (/'lfrac ','lfrin '/)
+  character(len=6),parameter   :: fraclist_l(3) = (/'lfrac ','lfrin ','r2lfrc'/)
   character(len=6),parameter   :: fraclist_g(3) = (/'gfrac ','lfrac ','lfrin '/)
   character(len=6),parameter   :: fraclist_r(3) = (/'rfrac ','lfrac ','lfrin '/)
   character(len=6),parameter   :: fraclist_w(1) = (/'wfrac '/)
@@ -177,7 +178,8 @@ contains
     use med_internalstate_mod , only : coupling_mode
     use med_internalstate_mod , only : compatm, compocn, compice, complnd
     use med_internalstate_mod , only : comprof, compglc, compwav, compname
-    use med_internalstate_mod , only : mapfcopy, mapconsd, mapnstod_consd
+    ! use med_internalstate_mod , only : mapfcopy, mapconsd, mapnstod_consd
+    use med_internalstate_mod , only : mapfcopy, mapconsf, mapconsd, mapnstod_consd
     use med_internalstate_mod , only : InternalState
     use med_map_mod           , only : med_map_routehandles_init, med_map_rh_is_created
     use med_methods_mod       , only : State_getNumFields => med_methods_State_getNumFields
@@ -205,6 +207,11 @@ contains
     real(R8), pointer   :: Si_imask(:)
     real(R8), pointer   :: So_omask(:)
     real(R8), pointer   :: Sa_ofrac(:)
+
+    real(R8), pointer   :: r2lfrc(:)
+    real(R8), pointer   :: rof2lnd_norm(:)
+    logical             :: r2l_map_created
+
     integer             :: n,n1,ns
     integer             :: maptype
     integer             :: fieldCount
@@ -279,6 +286,45 @@ contains
              if (ChkErr(rc,__LINE__,u_FILE_u)) return
           end if
        end do
+
+       ! ROF -> LND static mapping coverage on the land mesh
+
+       if ( is_local%wrap%comp_present(comprof) .and. &
+            is_local%wrap%comp_present(complnd) .and. &
+            is_local%wrap%med_coupling_active(comprof,complnd)) then
+
+          ! if (med_map_RH_is_created(is_local%wrap%RH(comprof,complnd,:), &
+               ! mapconsf, rc=rc)) then
+             ! if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+            r2l_map_created = med_map_RH_is_created( &
+               is_local%wrap%RH(comprof,complnd,:), mapconsf, rc=rc)
+            if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+          if (r2l_map_created) then
+
+
+             call ESMF_FieldGet( &
+                  is_local%wrap%field_NormOne(comprof,complnd,mapconsf), &
+                  farrayPtr=rof2lnd_norm, rc=rc)
+             if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+             call fldbun_getdata1d(is_local%wrap%FBFrac(complnd), &
+                  'r2lfrc', r2lfrc, rc)
+             if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+             ! if (associated(r2lfrc) .and. associated(rof2lnd_norm)) then
+                ! r2lfrc(:) = rof2lnd_norm(:)
+             ! end if
+
+            if (associated(r2lfrc) .and. associated(rof2lnd_norm)) then
+               r2lfrc(:) = rof2lnd_norm(:)
+
+            end if
+
+          end if
+       end if
+
        first_call = .false.
 
     endif

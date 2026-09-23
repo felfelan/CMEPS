@@ -713,6 +713,37 @@ contains
           call addmrg_to(complnd, 'Flrr_flood', mrg_from=comprof, mrg_fld='Flrr_flood', mrg_type='copy')
        end if
     end if
+
+
+    ! ---------------------------------------------------------------------
+    ! WRF-Hydro -> CTSM: routed liquid soil moisture
+    ! ---------------------------------------------------------------------
+    if (phase == 'advertise') then
+
+       call addfld_to(complnd, 'r2lfrc')
+       call addfld_from(comprof, 'inst_soil_moisture_content_routing_change')
+       call addfld_to(complnd, 'inst_soil_moisture_content_routing_change')
+
+    else
+
+       if ( fldchk(is_local%wrap%FBExp(complnd), &
+            'inst_soil_moisture_content_routing_change', rc=rc) .and. &
+            fldchk(is_local%wrap%FBImp(comprof, comprof), &
+            'inst_soil_moisture_content_routing_change', rc=rc)) then
+
+          call addmap_from(comprof, &
+               'inst_soil_moisture_content_routing_change', &
+               complnd, mapconsf, 'one', rof2lnd_map)
+
+          call addmrg_to(complnd, &
+               'inst_soil_moisture_content_routing_change', &
+               mrg_from=comprof, &
+               mrg_fld='inst_soil_moisture_content_routing_change', &
+               mrg_type='copy')
+       end if
+    end if
+
+
     if (phase == 'advertise') then
        call addfld_from(comprof, 'Sr_tdepth')
        call addfld_to(complnd, 'Sr_tdepth')
@@ -2294,7 +2325,7 @@ contains
             call addmap_from(compwav, 'Sw_t0m1', compocn,  mapbilnr_nstod, 'one', wav2ocn_map)
             call addmrg_to(compocn, 'Sw_t0m1', mrg_from=compwav, mrg_fld='Sw_t0m1', mrg_type='copy')
          end if
-      end if    
+      end if
       !-----------------------------
       ! to ocn:
       !-----------------------------
@@ -2307,7 +2338,7 @@ contains
             call addmap_from(compwav, 'Sw_t01', compocn,  mapbilnr_nstod, 'one', wav2ocn_map)
             call addmrg_to(compocn, 'Sw_t01', mrg_from=compwav, mrg_fld='Sw_t01', mrg_type='copy')
          end if
-      end if      
+      end if
       !-----------------------------
       ! to ocn:
       !-----------------------------
@@ -2320,7 +2351,7 @@ contains
             call addmap_from(compwav, 'Sw_thm', compocn,  mapbilnr_nstod, 'one', wav2ocn_map)
             call addmrg_to(compocn, 'Sw_thm', mrg_from=compwav, mrg_fld='Sw_thm', mrg_type='copy')
          end if
-      end if      
+      end if
       !-----------------------------
       ! to ocn:
       !-----------------------------
@@ -3303,6 +3334,20 @@ contains
                comprof, mapconsf, map_fracname_lnd2rof, 'unset')
           call addmrg_to(comprof, 'inst_soil_moisture_content', &
                mrg_from=complnd, mrg_fld='inst_soil_moisture_content', &
+               mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
+       end if
+    end if
+
+    if (phase == 'advertise') then
+       call addfld_from(complnd, 'inst_soil_porosity')
+       call addfld_to(comprof, 'inst_soil_porosity')
+    else
+       if ( fldchk(is_local%wrap%FBExp(comprof)         , 'inst_soil_porosity', rc=rc) .and. &
+            fldchk(is_local%wrap%FBImp(complnd, complnd), 'inst_soil_porosity', rc=rc)) then
+          call addmap_from(complnd, 'inst_soil_porosity', &
+               comprof, mapconsf, map_fracname_lnd2rof, 'unset')
+          call addmrg_to(comprof, 'inst_soil_porosity', &
+               mrg_from=complnd, mrg_fld='inst_soil_porosity', &
                mrg_type='copy_with_weights', mrg_fracname=mrg_fracname_lnd2rof)
        end if
     end if

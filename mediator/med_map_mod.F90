@@ -857,10 +857,20 @@ contains
     do mapindex = 1,nmappers
 
        ! Allocate the fldindex attribute of packed_indices if needed
+       ! if (.not. allocated(packed_data(mapindex)%fldindex)) then
+          ! allocate(packed_data(mapindex)%fldindex(fieldcount))
+          ! packed_data(mapindex)%fldindex(:) = -999
+       ! end if
+
        if (.not. allocated(packed_data(mapindex)%fldindex)) then
           allocate(packed_data(mapindex)%fldindex(fieldcount))
-          packed_data(mapindex)%fldindex(:) = -999
+       else if (size(packed_data(mapindex)%fldindex) /= fieldcount) then
+          deallocate(packed_data(mapindex)%fldindex)
+          allocate(packed_data(mapindex)%fldindex(fieldcount))
        end if
+
+       ! Reset indices every time this packed-field structure is rebuilt
+       packed_data(mapindex)%fldindex(:) = -999
 
        ! Loop over the fields in FBSrc
        do nf = 1, fieldCount
@@ -906,14 +916,16 @@ contains
        if (npacked(mapindex) > 0) then
           ! Create the packed source field bundle for mapindex
           allocate(ptrsrc_packed(npacked(mapindex), lsize_src))
-          ptrsrc_packed(npacked(mapindex),:) = 0._R8
+          ! ptrsrc_packed(npacked(mapindex),:) = 0._R8
+          ptrsrc_packed(:,:) = 0._R8
           packed_data(mapindex)%field_src = ESMF_FieldCreate(lmesh_src, &
                ptrsrc_packed, gridToFieldMap=(/2/),  meshloc=ESMF_MESHLOC_ELEMENT, rc=rc)
           if (chkerr(rc,__LINE__,u_FILE_u)) return
 
           ! Create the packed destination field bundle for mapindex
           allocate(ptrdst_packed(npacked(mapindex), lsize_dst))
-          ptrdst_packed(npacked(mapindex),:) = 0._R8
+          ! ptrdst_packed(npacked(mapindex),:) = 0._R8
+          ptrdst_packed(:,:) = 0._R8
           packed_data(mapindex)%field_dst = ESMF_FieldCreate(lmesh_dst, &
                ptrdst_packed, gridToFieldMap=(/2/),  meshloc=ESMF_MESHLOC_ELEMENT, rc=rc)
           if (chkerr(rc,__LINE__,u_FILE_u)) return
@@ -947,7 +959,7 @@ contains
     use ESMF                  , only : ESMF_FieldFill
     use ESMF                  , only : ESMF_KIND_R8
     use ESMF                  , only : ESMF_Region_Flag, ESMF_REGION_SELECT, ESMF_REGION_TOTAL
-    use med_internalstate_mod , only : nmappers, mapfcopy
+    use med_internalstate_mod , only : nmappers, mapfcopy, mapconsf
     use med_internalstate_mod , only : mappatch_uv3d, mappatch, mapbilnr_uv3d, mapconsf_uv3d, mapbilnr
     use med_internalstate_mod , only : packed_data_type
     use med_methods_mod       , only : Field_diagnose => med_methods_Field_diagnose
@@ -1063,7 +1075,12 @@ contains
                 np = packed_data(mapindex)%fldindex(nf)
                 if (np > 0) then
                    ! Fill packed source field
-                   call ESMF_FieldGet(fieldlist_src(nf), ungriddedUBound=ungriddedUBound, rc=rc)
+                   ! call ESMF_FieldGet(fieldlist_src(nf), ungriddedUBound=ungriddedUBound, rc=rc)
+
+                   call ESMF_FieldGet(fieldlist_src(nf), &
+                       ungriddedUBound=ungriddedUBound, &
+                       name=field_name, rc=rc)
+
                    if (chkerr(rc,__LINE__,u_FILE_u)) return
                    if (ungriddedUBound(1) > 0) then
                       call ESMF_FieldGet(fieldlist_src(nf), farrayptr=dataptr2d, rc=rc)
@@ -1076,6 +1093,7 @@ contains
                       if (chkerr(rc,__LINE__,u_FILE_u)) return
                       dataptr2d_packed(np,:) = dataptr1d(:)
                    end if
+
                 end if
              end do
 
@@ -1185,6 +1203,13 @@ contains
                 call ESMF_LogWrite(trim(subname)//": FB get "//trim(packed_data(mapindex)%mapnorm), ESMF_LOGMSG_INFO)
                 call ESMF_FieldBundleGet(FBFracSrc, packed_data(mapindex)%mapnorm, field=field_fracsrc, rc=rc)
                 if (chkerr(rc,__LINE__,u_FILE_u)) return
+                ! Diagnostic fix: ensure packed conservative destination
+                ! does not retain values from previous coupling callss
+                if (mapindex == mapconsf) then
+                   call ESMF_FieldFill(packed_data(mapindex)%field_dst, &
+                        dataFillScheme="const", const1=0.0_r8, rc=rc)
+                   if (chkerr(rc,__LINE__,u_FILE_u)) return
+                endif
                 call med_map_field_normalized(&
                      field_src=packed_data(mapindex)%field_src, &
                      field_dst=packed_data(mapindex)%field_dst, &
@@ -1244,7 +1269,12 @@ contains
                 ! Get the indices into the packed data structure
                 np = packed_data(mapindex)%fldindex(nf)
                 if (np > 0) then
-                   call ESMF_FieldGet(fieldlist_dst(nf), ungriddedUBound=ungriddedUBound, rc=rc)
+                   ! call ESMF_FieldGet(fieldlist_dst(nf), ungriddedUBound=ungriddedUBound, rc=rc)
+
+                   call ESMF_FieldGet(fieldlist_dst(nf), &
+                       ungriddedUBound=ungriddedUBound, &
+                       name=field_name, rc=rc)
+
                    if (chkerr(rc,__LINE__,u_FILE_u)) return
                    if (ungriddedUBound(1) > 0) then
                       call ESMF_FieldGet(fieldlist_dst(nf), farrayptr=dataptr2d, rc=rc)
@@ -1255,6 +1285,7 @@ contains
                    else
                       call ESMF_FieldGet(fieldlist_dst(nf), farrayptr=dataptr1d, rc=rc)
                       if (chkerr(rc,__LINE__,u_FILE_u)) return
+
                       dataptr1d(:) = dataptr2d_packed(np,:)
                    end if
                 end if
@@ -1345,6 +1376,7 @@ contains
           data_src1d(n) = data_src1d(n) * data_normsrc(n)
        end do
     end if
+
 
     ! regrid normalized packed source field
     call med_map_field (field_src=field_src, field_dst=field_dst, routehandles=routehandles, maptype=maptype, rc=rc)

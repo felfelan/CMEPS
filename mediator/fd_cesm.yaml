@@ -194,6 +194,18 @@
        canonical_units: m3/m3
        description: lnd export to river
      #
+     - standard_name: inst_soil_moisture_content_routing_change
+       canonical_units: m3 m-3
+       description: WRF-Hydro routing-induced change in liquid soil moisture
+     #
+     - standard_name: inst_soil_porosity
+       canonical_units: m3/m3
+       description: lnd export to river
+     #
+     - standard_name: r2lfrc
+       canonical_units: 1
+       description: ROF to LND spatial overlap fraction
+     #
      - standard_name: Sl_t
        canonical_units: K
        description: lnd import to med

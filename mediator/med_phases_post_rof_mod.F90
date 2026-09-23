@@ -8,7 +8,7 @@ module med_phases_post_rof_mod
   use ESMF                  , only : ESMF_LogWrite, ESMF_LOGMSG_INFO, ESMF_SUCCESS
   use ESMF                  , only : ESMF_GridComp, ESMF_GridCompGet
   use ESMF                  , only : ESMF_Mesh, ESMF_MESHLOC_ELEMENT, ESMF_TYPEKIND_R8
-  use ESMF                  , only : ESMF_Field, ESMF_FieldCreate
+  use ESMF                  , only : ESMF_Field, ESMF_FieldCreate, ESMF_FieldGet
   use ESMF                  , only : ESMF_FieldBundle, ESMF_FieldBundleCreate
   use ESMF                  , only : ESMF_FieldBundleGet, ESMF_FieldBundleAdd
   use ESMF                  , only : ESMF_VM, ESMF_VMAllreduce, ESMF_REDUCE_SUM
@@ -20,6 +20,7 @@ module med_phases_post_rof_mod
   use med_phases_history_mod, only : med_phases_history_write_comp
   use med_map_mod           , only : med_map_field_packed
   use med_methods_mod       , only : fldbun_getdata1d => med_methods_FB_getdata1d
+  use med_methods_mod       , only : fldbun_getdata2d => med_methods_FB_getdata2d
   use med_methods_mod       , only : fldbun_getmesh   => med_methods_FB_getmesh
   use perf_mod              , only : t_startf, t_stopf
   use shr_log_mod           , only : shr_log_error
@@ -116,6 +117,12 @@ contains
     type(ESMF_Clock)    :: dClock
     real(r8), pointer   :: data_orig(:)
     real(r8), pointer   :: data_copy(:)
+
+    type(ESMF_Field)    :: srcfield
+    integer             :: lrank
+    real(r8), pointer   :: data_orig2d(:,:)
+    real(r8), pointer   :: data_copy2d(:,:)
+
     integer             :: n
     logical             :: exists
     character(len=*), parameter :: subname='(med_phases_post_rof)'
@@ -132,13 +139,56 @@ contains
     call ESMF_GridCompGetInternalState(gcomp, is_local, rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
+    ! do n = 1, num_rof_fields
+      ! call fldbun_getdata1d(is_local%wrap%FBImp(comprof,comprof), trim(rof_field_names(n)), data_orig, rc=rc)
+      ! if (ChkErr(rc,__LINE__,u_FILE_u)) return
+      ! call fldbun_getdata1d(FBrof_r, trim(rof_field_names(n)), data_copy, rc=rc)
+      ! if (ChkErr(rc,__LINE__,u_FILE_u)) return
+      ! data_copy(:) = data_orig(:)
+    ! end do
+
     do n = 1, num_rof_fields
-      call fldbun_getdata1d(is_local%wrap%FBImp(comprof,comprof), trim(rof_field_names(n)), data_orig, rc=rc)
+
+      ! Determine rank of source ROF field
+      call ESMF_FieldBundleGet( &
+           is_local%wrap%FBImp(comprof,comprof), &
+           fieldName=trim(rof_field_names(n)), &
+           field=srcfield, rc=rc)
       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-      call fldbun_getdata1d(FBrof_r, trim(rof_field_names(n)), data_copy, rc=rc)
+
+      call ESMF_FieldGet(srcfield, rank=lrank, rc=rc)
       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-      data_copy(:) = data_orig(:)
+
+      if (lrank == 2) then
+
+         call fldbun_getdata2d( &
+              is_local%wrap%FBImp(comprof,comprof), &
+              trim(rof_field_names(n)), data_orig2d, rc=rc)
+         if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+         call fldbun_getdata2d( &
+              FBrof_r, trim(rof_field_names(n)), data_copy2d, rc=rc)
+         if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+         data_copy2d(:,:) = data_orig2d(:,:)
+
+      else
+
+         call fldbun_getdata1d( &
+              is_local%wrap%FBImp(comprof,comprof), &
+              trim(rof_field_names(n)), data_orig, rc=rc)
+         if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+         call fldbun_getdata1d( &
+              FBrof_r, trim(rof_field_names(n)), data_copy, rc=rc)
+         if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+         data_copy(:) = data_orig(:)
+
+      end if
+
     end do
+
 
     if (remove_negative_runoff_lnd) then
       do n = 1, size(fields_to_remove_negative_runoff_lnd)
@@ -229,6 +279,13 @@ contains
     integer :: n
     type(ESMF_Mesh)  :: mesh
     type(ESMF_Field) :: field
+
+    type(ESMF_Field) :: srcfield
+    integer :: lrank
+    integer :: ungriddedLBound(1)
+    integer :: ungriddedUBound(1)
+
+
     integer, parameter :: dbug_threshold = 20 ! threshold for writing debug information in this subroutine
     character(len=*), parameter :: subname='(med_phases_post_rof_mod: med_phases_post_rof_create_rof_field_bundle)'
     !---------------------------------------
@@ -257,12 +314,58 @@ contains
     ! though we only need to modify a subset of the fields.
     FBrof_r = ESMF_FieldBundleCreate(name='FBrof_r', rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    ! do n = 1, num_rof_fields
+      ! field = ESMF_FieldCreate(mesh, ESMF_TYPEKIND_R8, name=rof_field_names(n), meshloc=ESMF_MESHLOC_ELEMENT, rc=rc)
+      ! if (ChkErr(rc,__LINE__,u_FILE_u)) return
+      ! call ESMF_FieldBundleAdd(FBrof_r, (/field/), rc=rc)
+      ! if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    ! end do
+
     do n = 1, num_rof_fields
-      field = ESMF_FieldCreate(mesh, ESMF_TYPEKIND_R8, name=rof_field_names(n), meshloc=ESMF_MESHLOC_ELEMENT, rc=rc)
+
+      ! Get corresponding source ROF field
+      call ESMF_FieldBundleGet( &
+           is_local%wrap%FBImp(comprof,comprof), &
+           fieldName=trim(rof_field_names(n)), &
+           field=srcfield, rc=rc)
       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+      ! Determine whether this is a normal rank-1 field or a field
+      ! with one ungridded dimension (e.g. 20 soil layers).
+      call ESMF_FieldGet(srcfield, rank=lrank, rc=rc)
+      if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+      if (lrank == 2) then
+
+         call ESMF_FieldGet(srcfield, &
+              ungriddedLBound=ungriddedLBound, &
+              ungriddedUBound=ungriddedUBound, rc=rc)
+         if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+         field = ESMF_FieldCreate( &
+              mesh, ESMF_TYPEKIND_R8, &
+              name=trim(rof_field_names(n)), &
+              meshloc=ESMF_MESHLOC_ELEMENT, &
+              ungriddedLBound=ungriddedLBound, &
+              ungriddedUBound=ungriddedUBound, &
+              gridToFieldMap=(/2/), rc=rc)
+         if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+      else
+
+         field = ESMF_FieldCreate( &
+              mesh, ESMF_TYPEKIND_R8, &
+              name=trim(rof_field_names(n)), &
+              meshloc=ESMF_MESHLOC_ELEMENT, rc=rc)
+         if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+      end if
+
       call ESMF_FieldBundleAdd(FBrof_r, (/field/), rc=rc)
       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
     end do
+
 
     if (dbug_flag > dbug_threshold) then
       call ESMF_LogWrite(trim(subname)//": done", ESMF_LOGMSG_INFO)

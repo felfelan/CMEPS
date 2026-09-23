@@ -52,6 +52,10 @@ contains
     type(med_fldlist_type), pointer :: fldList
     real(r8), pointer           :: dataptr_scalar_lnd(:,:)
     real(r8), pointer           :: dataptr_scalar_atm(:,:)
+
+    real(r8), pointer :: r2lfrc_src(:)
+    real(r8), pointer :: r2lfrc_dst(:)
+
     character(len=*), parameter :: subname='(med_phases_prep_lnd)'
     !---------------------------------------
 
@@ -93,6 +97,27 @@ contains
             rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
        call t_stopf('MED:'//trim(subname)//' merge')
+
+      ! Copy static ROF->LND coverage fraction into the field sent to CTSM
+       if (fldchk(is_local%wrap%FBExp(complnd), 'r2lfrc', rc=rc)) then
+
+           call ESMF_FieldBundleGet(is_local%wrap%FBExp(complnd), &
+                fieldName='r2lfrc', field=lfield, rc=rc)
+           if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+           call ESMF_FieldGet(lfield, farrayPtr=r2lfrc_dst, rc=rc)
+           if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+           call ESMF_FieldBundleGet(is_local%wrap%FBFrac(complnd), &
+                fieldName='r2lfrc', field=lfield, rc=rc)
+           if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+           call ESMF_FieldGet(lfield, farrayPtr=r2lfrc_src, rc=rc)
+           if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+           r2lfrc_dst(:) = r2lfrc_src(:)
+
+       end if
 
        ! check cpl_scalars is in the state or not? fix for land components that do not have cpl_scalars
        call ESMF_StateGet(is_local%wrap%NStateExp(complnd), trim(is_local%wrap%flds_scalar_name), itemType, rc=rc)
